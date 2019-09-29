@@ -23,6 +23,7 @@ const EggShell = (app, options = {}) => {
 
   let swaggerJson = null;
   // 开启swagger
+  // 拼接swagger参数
   let swaggerOpt = null;
   if (options.swaggerOpt && options.swaggerOpt.open) {
     swaggerOpt = options.swaggerOpt;
@@ -52,10 +53,12 @@ const EggShell = (app, options = {}) => {
       swaggerJson.definitions = definitions;
     }
   }
-
+  // 遍历传入MethodHandler类的map
+  // 每一个控制器
   for (const c of ctMap.values()) {
-    // 解析控制器元数据
+    // 获取针对控制器的元数据
     let { ignoreJwtAll, beforeAll, afterAll, prefix, tagsAll, hiddenAll, tokenTypeAll, renderController } = ctHandler.getMetada(c.constructor);
+    // 控制器上的所有方法
     const propertyNames = _.filter(Object.getOwnPropertyNames(c), pName => {
       return pName !== 'constructor' && pName !== 'pathName' && pName !== 'fullPath';
     });
@@ -79,6 +82,7 @@ const EggShell = (app, options = {}) => {
 
       if (swaggerOpt && swaggerOpt.paths && swaggerOpt.paths.swaggerPath) {
         const swaggerPath = nodePath.join(__dirname, nodePath.normalize('../../' + swaggerOpt.paths.swaggerPath));
+        // 检查文件是否存在，不存在则创建文件
         try {
           fs.statSync(swaggerPath);
         } catch (error) {
@@ -93,13 +97,14 @@ const EggShell = (app, options = {}) => {
         } catch (error) {}
       }
     }
-
+    // 遍历当前控制器上的方法
     for (const pName of propertyNames) {
       // 解析函数元数据
+      // 拿到该方法的元数据
       let { reqMethod, path, before, after, message, ignoreJwt, tags, summary, description, parameters, responses, produces, consumes, hidden, tokenType, render } = methodHandler.getMetada(c[pName]);
       const befores = [ ...options.before, ...beforeAll, ...before ];
       const afters = [ ...options.after, ...afterAll, ...after ];
-
+      // 进行swagger的参数配置
       if (swaggerOpt && swaggerOpt.open && !hiddenAll && !hidden) {
         let finallyPath = prefix + path;
         finallyPath = replaceColon(finallyPath);
@@ -171,17 +176,19 @@ const EggShell = (app, options = {}) => {
           };
         }
       }
-
+      // 封装真正的router回调
       const routerCb = async (ctx, next) => {
         const instance = new c.constructor(ctx);
         try {
           if (!ignoreJwt && !ignoreJwtAll && jwt && options.jwtValidation) {
             await options.jwtValidation()(ctx, next);
           }
+          // 面向切片执行before
           for (const before of befores) {
             await before()(ctx, next);
           }
           ctx.body = ctx.request ? ctx.request.body : null;
+          // 执行控制器的对应方法，将结果返回到body上
           const result = await instance[pName](ctx);
           if (options.quickStart && !render && !renderController) {
             ctx.response.body = {
@@ -192,6 +199,7 @@ const EggShell = (app, options = {}) => {
           } else if (renderController || render) {
             ctx.set('Content-Type', 'text/html;charset=utf-8');
           }
+          // 面向切片执行afters
           for (const after of afters) {
             await after()(ctx, next);
           }
@@ -199,7 +207,7 @@ const EggShell = (app, options = {}) => {
           throw error;
         }
       };
-
+      // 将对应方法和回调挂载在router上
       router[reqMethod](prefix + path, routerCb);
     }
   }
@@ -208,6 +216,7 @@ const EggShell = (app, options = {}) => {
     const outPath = nodePath.join(__dirname, nodePath.normalize('../../' + swaggerOpt.paths.outPath));
     const stat = fs.statSync(outPath);
     if (stat) {
+      // 最后写到swagger文件上
       fs.writeFileSync(outPath, JSON.stringify(swaggerJson), { encoding: 'utf8' });
     }
   }
@@ -239,6 +248,7 @@ function getDefinition (definitions, definitionPath) {
 
 module.exports = {
   EggShell,
+  // 将异常对象对外暴露
   StatusError,
 
   Get: methodHandler.get(),
