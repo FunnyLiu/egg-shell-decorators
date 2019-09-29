@@ -7,7 +7,7 @@
 ## 文件结构
 
 ``` bash
-├── index.js
+├── index.js - 取出各种元数据，配置swagger和router，在router回调中执行真的的控制器方法
 ├── src
 |  ├── constants.js - 各个常量
 |  ├── enum
@@ -15,8 +15,8 @@
 |  ├── exception
 |  |  └── status-error.js - 继承自Error对象，设置status，默认500
 |  └── handler
-|     ├── controller-handler.js - 类装饰器
-|     └── method-handler.js - 方法装饰器
+|     ├── controller-handler.js - 类装饰器，定义各种元数据
+|     └── method-handler.js - 方法装饰器，定义各种元数据
 ```
 
 ## 内部模块依赖
