@@ -15,8 +15,8 @@
 |  ├── exception
 |  |  └── status-error.js - 继承自Error对象，设置status，默认500
 |  └── handler
-|     ├── controller-handler.js
-|     └── method-handler.js
+|     ├── controller-handler.js - 类装饰器
+|     └── method-handler.js - 方法装饰器
 ```
 
 ## 内部模块依赖
